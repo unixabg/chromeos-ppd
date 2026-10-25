@@ -31,7 +31,7 @@ sudo python3 tools/probe.py --dots 576 --drawer
 ```
 
 Each test print shows its number as small squares top-left and large digits
-top-right. After each one, answer **normal**, **inverted** (white on black),
+top-right. After each one, answer **b** (black on white), **negative** (white on black),
 **nothing**, or describe it. For the ESC/POS cut test, list the letters that
 were followed by a cut, e.g. `B D`.
 

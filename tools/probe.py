@@ -207,11 +207,11 @@ def tspl_suite(args):
     tests = []
     data, _ = job(1, 1, 0)
     tests.append(dict(key="mode1_black0", title="BITMAP mode 1, 0 = black",
-                      expect="NORMAL (black drawing on white) if the printer uses 0 = black",
+                      expect="black on white if the printer uses 0 = black, otherwise a negative",
                       data=data))
     data, _ = job(2, 1, 1)
     tests.append(dict(key="mode1_black1", title="BITMAP mode 1, 1 = black",
-                      expect="NORMAL if the printer uses 1 = black (one of tests 1/2 is a negative)",
+                      expect="black on white if the printer uses 1 = black (one of tests 1/2 is a negative)",
                       data=data))
     data, _ = job(3, 0, 0)
     tests.append(dict(key="mode0_black0", title="BITMAP mode 0, 0 = black",
@@ -245,10 +245,10 @@ def escpos_suite(args):
                       data=init + b"PROBE TEST 1: ESC/POS TEXT\n" + b"Line 2\n" + feed_cut))
     card = args.card_rows
     tests.append(dict(key="raster_black1", title="GS v 0 raster, 1 = black",
-                      expect="NORMAL card (black drawing on white) if the printer uses 1 = black",
+                      expect="black on white if the printer uses 1 = black, otherwise a negative",
                       data=init + raster(2, card, 1) + feed_cut))
     tests.append(dict(key="raster_black0", title="GS v 0 raster, 0 = black",
-                      expect="NORMAL only if the printer uses 0 = black (usually a negative)",
+                      expect="usually a NEGATIVE (white on black); black on white only if the printer uses 0 = black",
                       data=init + raster(3, card, 0) + feed_cut))
     tall = args.tall_rows
     tests.append(dict(key="raster_tall", title="one tall GS v 0 raster (%d rows, %.0f mm)"
@@ -297,8 +297,17 @@ SUITES = {"tspl": (tspl_suite, tspl_status), "escpos": (escpos_suite, escpos_sta
 # ----------------------------------------------------------------------------
 
 def yes(ans):
+    """Printed the right way round: 'y', 'b', 'black on white', 'normal'."""
     a = ans.strip().lower()
-    return a.startswith("y") or a.startswith("normal")
+    return (a.startswith("y") or a.startswith("normal") or a == "b"
+            or a.startswith("black on"))
+
+
+def negative(ans):
+    """Printed as a negative: 'n'... is ambiguous with 'no', so only accept
+    words: 'neg', 'negative', 'inverted', 'white on black'."""
+    a = ans.strip().lower()
+    return a.startswith("neg") or "invert" in a or "white on black" in a
 
 
 def draft_profile(args, info, lang, answers, geometry, status):
@@ -320,11 +329,11 @@ def draft_profile(args, info, lang, answers, geometry, status):
     if lang == "tspl":
         b0 = answers.get("mode1_black0", "")
         b1 = answers.get("mode1_black1", "")
-        if "invert" in b0.lower() or (yes(b1) and not yes(b0)):
+        if negative(b0) or (yes(b1) and not yes(b0)):
             prof["black_bit"] = 1
         else:
             prof["black_bit"] = 0
-        mode = 1 if (yes(b0) or yes(b1) or "invert" in (b0 + b1).lower()) else 0
+        mode = 1 if (yes(b0) or yes(b1) or negative(b0) or negative(b1)) else 0
         w_in, h_in = geometry["size_in"]
         prof["tspl"] = {
             "bitmap_mode": mode,
@@ -338,7 +347,7 @@ def draft_profile(args, info, lang, answers, geometry, status):
     elif lang == "escpos":
         g1 = answers.get("raster_black1", "")
         g0 = answers.get("raster_black0", "")
-        prof["black_bit"] = 0 if (yes(g0) and not yes(g1)) else 1
+        prof["black_bit"] = 0 if ((yes(g0) and not yes(g1)) or negative(g1)) else 1
         cuts = answers.get("cuts", "").upper()
         cut_hex = None
         for letter, hx in (("D", "1d564203"), ("B", "1d5601"), ("C", "1d564103"),
@@ -446,7 +455,8 @@ def main():
         finally:
             t.close()
         time.sleep(3)
-        answers[test["key"]] = input("   TEST %d: normal / inverted / nothing / describe: " % n)
+        answers[test["key"]] = input("   TEST %d: [b]lack on white / [n]egative (white on black) / "
+                                     "nothing / describe: " % n)
 
     prof = draft_profile(args, info, lang, answers, geometry, status)
     with open(report_path, "w") as f:
