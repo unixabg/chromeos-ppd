@@ -13,6 +13,7 @@
     "pid": "ccdd"
   },
   "language": "tspl",
+  "engine": "uniprint",
   "dpi": 203,
   "black_bit": 0,
   "tspl": {
@@ -124,6 +125,7 @@
   "notes": [
     "Firmware drops the whole job for BITMAP mode 0 or mode 2 (XOR); REVERSE, BAR, TEXT are ignored.",
     "Bitmap polarity is 0 = black, so the PPD uses PostScript mode with an inverting transfer function.",
-    "The printer never answers status queries over USB."
+    "The printer never answers status queries over USB.",
+    "v1.0 (bit engine, single page) tested on ChromeOS and Linux; v1.1 uniprint engine (multi-page) passes the emulator, real-printer retest pending."
   ]
 }

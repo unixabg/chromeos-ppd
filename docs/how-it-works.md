@@ -9,53 +9,66 @@ ChromeOS's print system is CUPS, but locked down:
   commands through **`foomatic_shell`**, ChromeOS's restricted shell
   (chromiumos/platform2). It allows only `cat`, `cut`, `date`, `echo`, `gs`,
   `pdftops`, `printf` and `sed`, supports `;`, `|`, `( )` and quoting, and has
-  **no redirection** (`<`, `>`).
+  **no redirection** (`<`, `>`). Unquoted arguments may only contain letters,
+  digits and `. / _ - + @ %`; anything else must be in single quotes.
 - `gs` must have `-dSAFER` and `-sOutputFile=-`, may read only stdin or files in
   `/tmp/` and `/var/spool/cups/`, and may not use `-c`, `-o`, `@file`, `NOSAFER`,
   `OutputFile`, `OutputICCProfile` or **`stdout`**.
-- ChromeOS's Ghostscript includes the raw `bit` device.
+- ChromeOS's Ghostscript is built with a fixed device list. It includes
+  `uniprint` and `bit`.
 
-## The recipe
+## The recipe: Ghostscript's `uniprint` device (engine `uniprint`, default)
 
-Ghostscript renders the page to a raw 1-bit image (`-sDEVICE=bit`, one row
-after another, MSB first). Most thermal printers accept exactly that inside a
-single bitmap command, so the PPD only has to put the printer's own commands
-before and after it:
+`uniprint` is a configurable raster device. Given a **non-empty**
+`upBeginPageCommand`, it writes:
 
 ```
-(printf 'HEADER…BITMAP x,y,w,h,mode,' ; gs -sDEVICE=bit -r203 -gWxH … ; printf 'FOOTER')
+upBeginJobCommand
+for every page:  upBeginPageCommand  +  raw 1-bit rows (MSB first)  +  upEndPageCommand
+upEndJobCommand
 ```
 
-Options (label size, darkness, cut, cash drawer, …) are ordinary foomatic
-options whose values are pasted into those `printf` strings.
+with no header of its own. That's exactly the shape of a thermal printer job,
+so each PPD is a single `gs` command whose `-dup…Command=<hex>` arguments hold
+the printer's bytes:
 
-## Polarity: 1 = black or 0 = black?
+| | TSPL label printer | ESC/POS receipt printer |
+|---|---|---|
+| job start | – | `ESC @` (+ cash drawer) |
+| page start | `REFERENCE`, `OFFSET`, `GAP`, `DENSITY`, `SPEED`, `DIRECTION`, `SIZE`, `CLS`, `BITMAP 0,0,w,h,1,` | `GS v 0 0 xL xH yL yH` |
+| page end | `PRINT 1,1` | optional feed + cut ("Cut between pages") |
+| job end | – | feed + cut (+ cash drawer) |
 
-Ghostscript's `bit` device writes **1 = black**. Printers disagree:
+Options (label size, darkness, cut, …) are ordinary foomatic options whose
+values are hex pasted into those arguments. The PageSize option comes last: it
+finishes the page-start bytes, closes the argument and adds the matching
+`-gWIDTHxHEIGHT`.
 
-- **Printer wants 1 = black** (ESC/POS `GS v 0`, many others) → **PDF mode.**
-  CUPS hands `foomatic-rip` the PDF. `foomatic-rip` adds the file path to the
-  first plain `gs` command it finds.
-- **Printer wants 0 = black** (e.g. Munbyn RW403B-N TSPL) → **PostScript mode.**
-  The image has to be inverted, and nothing allowed can invert bytes reliably
-  (`sed y///` corrupts binary data under a UTF-8 locale). Instead the PPD has a
-  PostScript option, *Image Polarity*, whose code is
-  `<</BeginPage{pop{1 exch sub}settransfer}>>setpagedevice`. The PPD accepts
-  only PostScript, so CUPS converts with `pdftops`, and `pstops` inserts that
-  code into the job. Ghostscript then renders a negative, which is 0 = black.
+Details that matter:
 
-## Two foomatic-rip traps
+- **Polarity.** `uniprint`'s native output is **0 = black** (TSPL's usual
+  convention). `'-dupWhiteTransfer={1.0 0.0}'` flips it to **1 = black**
+  (ESC/POS). The generator adds it when the profile says `"black_bit": 1`.
+- **Row padding.** Rows are padded to an even number of bytes, so the raster
+  width is rounded up to a multiple of 16 dots and that width is declared to
+  the printer.
+- **Never empty.** With an empty `upBeginPageCommand`, `uniprint` writes a Sun
+  raster header instead. Every language has a page-start command, so this
+  doesn't happen.
+- **PDF mode.** CUPS hands `foomatic-rip` the PDF and `foomatic-rip` inserts
+  the file path into the `gs` command. The command must start with a bare
+  `gs` for that to work.
 
-1. **PostScript mode rewrites `gs`.** `foomatic-rip` adds `-sstdout=%stderr` to
-   any command that starts with `gs`, and ChromeOS rejects the name `stdout`.
-   Fix: run it in a subshell, `(gs …)`. The command then starts with `(`, so
-   `foomatic-rip` leaves it alone.
-2. **PDF mode needs a bare `gs`.** `foomatic-rip` inserts the PDF file path into
-   the first `gs` it finds. If there's none (for example because it's wrapped
-   in `( )`), it appends `< file` instead, which `foomatic_shell` can't parse.
-   So in PDF mode `gs` must not be wrapped.
+## The older engine: `bit` (single page)
 
-`tools/ppdgen.py` picks the right mode from the profile's `black_bit`.
+Before `uniprint`, the PPDs used `printf '<header>'; gs -sDEVICE=bit; printf
+'<footer>'`. It still works and stays available (`"engine": "bit"` in a
+profile), but it can only print **the first page**, because the header must
+state the image height before the image and one `gs` run outputs all pages
+back to back. For 0 = black printers it also needs PostScript mode: an inverting
+`settransfer` inserted by CUPS's `pstops`, and `gs` run as a subshell
+`(gs …)`, because `foomatic-rip` otherwise adds `-sstdout=%stderr`, which
+ChromeOS rejects.
 
 ## Printer firmware quirks
 
@@ -68,6 +81,7 @@ the real printer, not on the language manual.
 ## Testing without a Chromebook
 
 `tests/chromeos/` builds ChromeOS's real `foomatic_shell` and a ChromeOS-patched
-`foomatic-rip` and runs each PPD through them. It catches every problem above
-(it reports the same "gs: disallowed name" error ChromeOS would, and flags
-inverted output).
+`foomatic-rip` and runs each PPD through them, including multi-page documents
+(`--pages N`). It reports the same errors ChromeOS would ("gs: disallowed
+name", parse errors), checks the bitmap sizes decode, counts the pages and
+flags inverted output.

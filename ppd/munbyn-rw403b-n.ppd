@@ -5,9 +5,11 @@
 *%   Firmware drops the whole job for BITMAP mode 0 or mode 2 (XOR); REVERSE, BAR, TEXT are ignored.
 *%   Bitmap polarity is 0 = black, so the PPD uses PostScript mode with an inverting transfer function.
 *%   The printer never answers status queries over USB.
-*% Runs only printf + Ghostscript, as allowed by ChromeOS foomatic_shell.
+*%   v1.0 (bit engine, single page) tested on ChromeOS and Linux; v1.1 uniprint engine (multi-page) passes the emulator, real-printer retest pending.
+*% Engine: uniprint  (one Ghostscript run, every page printed)
+*% Uses only commands allowed by ChromeOS foomatic_shell.
 *FormatVersion: "4.3"
-*FileVersion: "1.0.0"
+*FileVersion: "1.1.0"
 *LanguageVersion: English
 *LanguageEncoding: ISOLatin1
 *PCFileName: "MUNBYN-R.PPD"
@@ -15,7 +17,7 @@
 *Product: "(RW403B-N)"
 *ModelName: "Munbyn RW403B-N"
 *ShortNickName: "Munbyn RW403B-N"
-*NickName: "Munbyn RW403B-N, TSPL ChromeOS (chromeos-thermal-ppd 1.0.0)"
+*NickName: "Munbyn RW403B-N, TSPL ChromeOS (chromeos-thermal-ppd 1.1.0)"
 *1284DeviceID: "MFG:Munbyn;CMD:TSPL;MDL:RW403B-N;CLS:PRINTER;"
 *PSVersion: "(3010.000) 0"
 *LanguageLevel: "3"
@@ -27,9 +29,13 @@
 *TTRasterizer: Type42
 *cupsVersion: 2.2
 *cupsManualCopies: True
-*cupsFilter: "application/vnd.cups-postscript 0 foomatic-rip"
+*cupsFilter: "application/vnd.cups-pdf 0 foomatic-rip"
+*cupsFilter: "application/vnd.cups-postscript 100 foomatic-rip"
 *FoomaticIDs: munbyn-rw403b-n tspl
-*FoomaticRIPCommandLine: "(printf 'REFERENCE 0,0\r\nOFFSET 0%A')"
+*FoomaticRIPCommandLine: "gs -q -dSAFER -dBATCH -dNOPAUSE -dQUIET -sDEVICE=uniprint -dupColorModel=/DeviceGray -dupRendering=/ErrorDiffusion -dupOutputFormat=/SunRaster '-dupComponentBits={1}' -r203&&
+ -dFIXEDMEDIA -dPDFFitPage -dPSFitPage '-dupEndPageCommand=<0d0a5052494e5420312c310d0a>' '-dupBeginPageCommand=<5245464552454e434520302c300d0a4f464653455420300d0a%A -sOutputFile=- -"
+*FoomaticRIPCommandLinePDF: "gs -q -dSAFER -dBATCH -dNOPAUSE -dQUIET -sDEVICE=uniprint -dupColorModel=/DeviceGray -dupRendering=/ErrorDiffusion -dupOutputFormat=/SunRaster '-dupComponentBits={1}'&&
+ -r203 -dFIXEDMEDIA -dPDFFitPage -dPSFitPage '-dupEndPageCommand=<0d0a5052494e5420312c310d0a>' '-dupBeginPageCommand=<5245464552454e434520302c300d0a4f464653455420300d0a%A -sOutputFile=- -"
 *HWMargins: 0 0 0 0
 
 *OpenUI *PageSize/Media Size: PickOne
@@ -49,32 +55,19 @@
 *PageSize w142h142/1.96x1.96 in: "<</PageSize[142 142]/ImagingBBox null>>setpagedevice"
 *PageSize w142h85/1.96x1.20 in: "<</PageSize[142 85]/ImagingBBox null>>setpagedevice"
 *PageSize w114h85/1.60x1.20 in: "<</PageSize[114 85]/ImagingBBox null>>setpagedevice"
-*FoomaticRIPOptionSetting PageSize=w288h432: "\r\nDIRECTION 0,0\r\nSIZE 101.60 mm,152.40 mm\r\nCLS\r\nBITMAP 0,0,102,1218,1,'; (gs -q -dSAFER -dBATCH -dNOPAUSE -dQUIET -sDEVICE=bit -r203 -g816x1218&&
- -dFIXEDMEDIA -dPDFFitPage -dPSFitPage -dFirstPage=1 -dLastPage=1 -sOutputFile=- -); printf '\r\nPRINT 1,1\r\n"
-*FoomaticRIPOptionSetting PageSize=w216h360: "\r\nDIRECTION 0,0\r\nSIZE 76.20 mm,127.00 mm\r\nCLS\r\nBITMAP 0,0,77,1015,1,'; (gs -q -dSAFER -dBATCH -dNOPAUSE -dQUIET -sDEVICE=bit -r203 -g616x1015&&
- -dFIXEDMEDIA -dPDFFitPage -dPSFitPage -dFirstPage=1 -dLastPage=1 -sOutputFile=- -); printf '\r\nPRINT 1,1\r\n"
-*FoomaticRIPOptionSetting PageSize=w216h216: "\r\nDIRECTION 0,0\r\nSIZE 76.20 mm,76.20 mm\r\nCLS\r\nBITMAP 0,0,77,609,1,'; (gs -q -dSAFER -dBATCH -dNOPAUSE -dQUIET -sDEVICE=bit -r203 -g616x609&&
- -dFIXEDMEDIA -dPDFFitPage -dPSFitPage -dFirstPage=1 -dLastPage=1 -sOutputFile=- -); printf '\r\nPRINT 1,1\r\n"
-*FoomaticRIPOptionSetting PageSize=w216h144: "\r\nDIRECTION 0,0\r\nSIZE 76.20 mm,50.80 mm\r\nCLS\r\nBITMAP 0,0,77,406,1,'; (gs -q -dSAFER -dBATCH -dNOPAUSE -dQUIET -sDEVICE=bit -r203 -g616x406&&
- -dFIXEDMEDIA -dPDFFitPage -dPSFitPage -dFirstPage=1 -dLastPage=1 -sOutputFile=- -); printf '\r\nPRINT 1,1\r\n"
-*FoomaticRIPOptionSetting PageSize=w180h108: "\r\nDIRECTION 0,0\r\nSIZE 63.50 mm,38.10 mm\r\nCLS\r\nBITMAP 0,0,64,304,1,'; (gs -q -dSAFER -dBATCH -dNOPAUSE -dQUIET -sDEVICE=bit -r203 -g512x304&&
- -dFIXEDMEDIA -dPDFFitPage -dPSFitPage -dFirstPage=1 -dLastPage=1 -sOutputFile=- -); printf '\r\nPRINT 1,1\r\n"
-*FoomaticRIPOptionSetting PageSize=w164h164: "\r\nDIRECTION 0,0\r\nSIZE 57.86 mm,57.86 mm\r\nCLS\r\nBITMAP 0,0,58,462,1,'; (gs -q -dSAFER -dBATCH -dNOPAUSE -dQUIET -sDEVICE=bit -r203 -g464x462&&
- -dFIXEDMEDIA -dPDFFitPage -dPSFitPage -dFirstPage=1 -dLastPage=1 -sOutputFile=- -); printf '\r\nPRINT 1,1\r\n"
-*FoomaticRIPOptionSetting PageSize=w162h162: "\r\nDIRECTION 0,0\r\nSIZE 57.15 mm,57.15 mm\r\nCLS\r\nBITMAP 0,0,58,457,1,'; (gs -q -dSAFER -dBATCH -dNOPAUSE -dQUIET -sDEVICE=bit -r203 -g464x457&&
- -dFIXEDMEDIA -dPDFFitPage -dPSFitPage -dFirstPage=1 -dLastPage=1 -sOutputFile=- -); printf '\r\nPRINT 1,1\r\n"
-*FoomaticRIPOptionSetting PageSize=w162h90: "\r\nDIRECTION 0,0\r\nSIZE 57.15 mm,31.75 mm\r\nCLS\r\nBITMAP 0,0,58,254,1,'; (gs -q -dSAFER -dBATCH -dNOPAUSE -dQUIET -sDEVICE=bit -r203 -g464x254&&
- -dFIXEDMEDIA -dPDFFitPage -dPSFitPage -dFirstPage=1 -dLastPage=1 -sOutputFile=- -); printf '\r\nPRINT 1,1\r\n"
-*FoomaticRIPOptionSetting PageSize=w144h144: "\r\nDIRECTION 0,0\r\nSIZE 50.80 mm,50.80 mm\r\nCLS\r\nBITMAP 0,0,51,406,1,'; (gs -q -dSAFER -dBATCH -dNOPAUSE -dQUIET -sDEVICE=bit -r203 -g408x406&&
- -dFIXEDMEDIA -dPDFFitPage -dPSFitPage -dFirstPage=1 -dLastPage=1 -sOutputFile=- -); printf '\r\nPRINT 1,1\r\n"
-*FoomaticRIPOptionSetting PageSize=w144h72: "\r\nDIRECTION 0,0\r\nSIZE 50.80 mm,25.40 mm\r\nCLS\r\nBITMAP 0,0,51,203,1,'; (gs -q -dSAFER -dBATCH -dNOPAUSE -dQUIET -sDEVICE=bit -r203 -g408x203&&
- -dFIXEDMEDIA -dPDFFitPage -dPSFitPage -dFirstPage=1 -dLastPage=1 -sOutputFile=- -); printf '\r\nPRINT 1,1\r\n"
-*FoomaticRIPOptionSetting PageSize=w142h142: "\r\nDIRECTION 0,0\r\nSIZE 50.09 mm,50.09 mm\r\nCLS\r\nBITMAP 0,0,50,400,1,'; (gs -q -dSAFER -dBATCH -dNOPAUSE -dQUIET -sDEVICE=bit -r203 -g400x400&&
- -dFIXEDMEDIA -dPDFFitPage -dPSFitPage -dFirstPage=1 -dLastPage=1 -sOutputFile=- -); printf '\r\nPRINT 1,1\r\n"
-*FoomaticRIPOptionSetting PageSize=w142h85: "\r\nDIRECTION 0,0\r\nSIZE 50.09 mm,29.99 mm\r\nCLS\r\nBITMAP 0,0,50,240,1,'; (gs -q -dSAFER -dBATCH -dNOPAUSE -dQUIET -sDEVICE=bit -r203 -g400x240&&
- -dFIXEDMEDIA -dPDFFitPage -dPSFitPage -dFirstPage=1 -dLastPage=1 -sOutputFile=- -); printf '\r\nPRINT 1,1\r\n"
-*FoomaticRIPOptionSetting PageSize=w114h85: "\r\nDIRECTION 0,0\r\nSIZE 40.22 mm,29.99 mm\r\nCLS\r\nBITMAP 0,0,41,240,1,'; (gs -q -dSAFER -dBATCH -dNOPAUSE -dQUIET -sDEVICE=bit -r203 -g328x240&&
- -dFIXEDMEDIA -dPDFFitPage -dPSFitPage -dFirstPage=1 -dLastPage=1 -sOutputFile=- -); printf '\r\nPRINT 1,1\r\n"
+*FoomaticRIPOptionSetting PageSize=w288h432: "444952454354494f4e20302c300d0a53495a45203130312e3630206d6d2c3135322e3430206d6d0d0a434c530d0a4249544d415020302c302c3130322c313231382c312c>' -g816x1218"
+*FoomaticRIPOptionSetting PageSize=w216h360: "444952454354494f4e20302c300d0a53495a452037362e3230206d6d2c3132372e3030206d6d0d0a434c530d0a4249544d415020302c302c37382c313031352c312c>' -g624x1015"
+*FoomaticRIPOptionSetting PageSize=w216h216: "444952454354494f4e20302c300d0a53495a452037362e3230206d6d2c37362e3230206d6d0d0a434c530d0a4249544d415020302c302c37382c3630392c312c>' -g624x609"
+*FoomaticRIPOptionSetting PageSize=w216h144: "444952454354494f4e20302c300d0a53495a452037362e3230206d6d2c35302e3830206d6d0d0a434c530d0a4249544d415020302c302c37382c3430362c312c>' -g624x406"
+*FoomaticRIPOptionSetting PageSize=w180h108: "444952454354494f4e20302c300d0a53495a452036332e3530206d6d2c33382e3130206d6d0d0a434c530d0a4249544d415020302c302c36342c3330342c312c>' -g512x304"
+*FoomaticRIPOptionSetting PageSize=w164h164: "444952454354494f4e20302c300d0a53495a452035372e3836206d6d2c35372e3836206d6d0d0a434c530d0a4249544d415020302c302c35382c3436322c312c>' -g464x462"
+*FoomaticRIPOptionSetting PageSize=w162h162: "444952454354494f4e20302c300d0a53495a452035372e3135206d6d2c35372e3135206d6d0d0a434c530d0a4249544d415020302c302c35382c3435372c312c>' -g464x457"
+*FoomaticRIPOptionSetting PageSize=w162h90: "444952454354494f4e20302c300d0a53495a452035372e3135206d6d2c33312e3735206d6d0d0a434c530d0a4249544d415020302c302c35382c3235342c312c>' -g464x254"
+*FoomaticRIPOptionSetting PageSize=w144h144: "444952454354494f4e20302c300d0a53495a452035302e3830206d6d2c35302e3830206d6d0d0a434c530d0a4249544d415020302c302c35322c3430362c312c>' -g416x406"
+*FoomaticRIPOptionSetting PageSize=w144h72: "444952454354494f4e20302c300d0a53495a452035302e3830206d6d2c32352e3430206d6d0d0a434c530d0a4249544d415020302c302c35322c3230332c312c>' -g416x203"
+*FoomaticRIPOptionSetting PageSize=w142h142: "444952454354494f4e20302c300d0a53495a452035302e3039206d6d2c35302e3039206d6d0d0a434c530d0a4249544d415020302c302c35302c3430302c312c>' -g400x400"
+*FoomaticRIPOptionSetting PageSize=w142h85: "444952454354494f4e20302c300d0a53495a452035302e3039206d6d2c32392e3939206d6d0d0a434c530d0a4249544d415020302c302c35302c3234302c312c>' -g400x240"
+*FoomaticRIPOptionSetting PageSize=w114h85: "444952454354494f4e20302c300d0a53495a452034302e3232206d6d2c32392e3939206d6d0d0a434c530d0a4249544d415020302c302c34322c3234302c312c>' -g336x240"
 *CloseUI: *PageSize
 
 *OpenUI *PageRegion/Media Size: PickOne
@@ -130,27 +123,20 @@
 *Resolution 203dpi/203 dpi: ""
 *CloseUI: *Resolution
 
-*OpenUI *Polarity/Image Polarity: PickOne
-*OrderDependency: 50 AnySetup *Polarity
-*DefaultPolarity: Printer
-*Polarity Printer/Normal (printer wants 0 = black): "<</BeginPage{pop{1 exch sub}settransfer}>>setpagedevice"
-*Polarity Raw/Inverted (diagnostic only): ""
-*CloseUI: *Polarity
-
 *OpenUI *MediaType/Media Type: PickOne
 *FoomaticRIPOption MediaType: enum CmdLine A
 *OrderDependency: 200 AnySetup *MediaType
 *DefaultMediaType: Gap3
 *MediaType Gap3/Gap labels (3 mm gap): ""
-*FoomaticRIPOptionSetting MediaType=Gap3: "\r\nGAP 3.00 mm,0.00 mm"
+*FoomaticRIPOptionSetting MediaType=Gap3: "47415020332e3030206d6d2c302e3030206d6d0d0a"
 *MediaType Gap2/Gap labels (2 mm gap): ""
-*FoomaticRIPOptionSetting MediaType=Gap2: "\r\nGAP 2.00 mm,0.00 mm"
+*FoomaticRIPOptionSetting MediaType=Gap2: "47415020322e3030206d6d2c302e3030206d6d0d0a"
 *MediaType Gap1/Gap labels (1 mm gap): ""
-*FoomaticRIPOptionSetting MediaType=Gap1: "\r\nGAP 1.00 mm,0.00 mm"
+*FoomaticRIPOptionSetting MediaType=Gap1: "47415020312e3030206d6d2c302e3030206d6d0d0a"
 *MediaType BLine3/Black mark labels (3 mm mark): ""
-*FoomaticRIPOptionSetting MediaType=BLine3: "\r\nBLINE 3.00 mm,0.00 mm"
+*FoomaticRIPOptionSetting MediaType=BLine3: "424c494e4520332e3030206d6d2c302e3030206d6d0d0a"
 *MediaType Continuous/Continuous roll: ""
-*FoomaticRIPOptionSetting MediaType=Continuous: "\r\nGAP 0.00 mm,0.00 mm"
+*FoomaticRIPOptionSetting MediaType=Continuous: "47415020302e3030206d6d2c302e3030206d6d0d0a"
 *CloseUI: *MediaType
 
 *OpenUI *Darkness/Darkness: PickOne
@@ -158,35 +144,35 @@
 *OrderDependency: 300 AnySetup *Darkness
 *DefaultDarkness: 8
 *Darkness 1/1: ""
-*FoomaticRIPOptionSetting Darkness=1: "\r\nDENSITY 1"
+*FoomaticRIPOptionSetting Darkness=1: "44454e5349545920310d0a"
 *Darkness 2/2: ""
-*FoomaticRIPOptionSetting Darkness=2: "\r\nDENSITY 2"
+*FoomaticRIPOptionSetting Darkness=2: "44454e5349545920320d0a"
 *Darkness 3/3: ""
-*FoomaticRIPOptionSetting Darkness=3: "\r\nDENSITY 3"
+*FoomaticRIPOptionSetting Darkness=3: "44454e5349545920330d0a"
 *Darkness 4/4: ""
-*FoomaticRIPOptionSetting Darkness=4: "\r\nDENSITY 4"
+*FoomaticRIPOptionSetting Darkness=4: "44454e5349545920340d0a"
 *Darkness 5/5: ""
-*FoomaticRIPOptionSetting Darkness=5: "\r\nDENSITY 5"
+*FoomaticRIPOptionSetting Darkness=5: "44454e5349545920350d0a"
 *Darkness 6/6: ""
-*FoomaticRIPOptionSetting Darkness=6: "\r\nDENSITY 6"
+*FoomaticRIPOptionSetting Darkness=6: "44454e5349545920360d0a"
 *Darkness 7/7: ""
-*FoomaticRIPOptionSetting Darkness=7: "\r\nDENSITY 7"
+*FoomaticRIPOptionSetting Darkness=7: "44454e5349545920370d0a"
 *Darkness 8/8: ""
-*FoomaticRIPOptionSetting Darkness=8: "\r\nDENSITY 8"
+*FoomaticRIPOptionSetting Darkness=8: "44454e5349545920380d0a"
 *Darkness 9/9: ""
-*FoomaticRIPOptionSetting Darkness=9: "\r\nDENSITY 9"
+*FoomaticRIPOptionSetting Darkness=9: "44454e5349545920390d0a"
 *Darkness 10/10: ""
-*FoomaticRIPOptionSetting Darkness=10: "\r\nDENSITY 10"
+*FoomaticRIPOptionSetting Darkness=10: "44454e534954592031300d0a"
 *Darkness 11/11: ""
-*FoomaticRIPOptionSetting Darkness=11: "\r\nDENSITY 11"
+*FoomaticRIPOptionSetting Darkness=11: "44454e534954592031310d0a"
 *Darkness 12/12: ""
-*FoomaticRIPOptionSetting Darkness=12: "\r\nDENSITY 12"
+*FoomaticRIPOptionSetting Darkness=12: "44454e534954592031320d0a"
 *Darkness 13/13: ""
-*FoomaticRIPOptionSetting Darkness=13: "\r\nDENSITY 13"
+*FoomaticRIPOptionSetting Darkness=13: "44454e534954592031330d0a"
 *Darkness 14/14: ""
-*FoomaticRIPOptionSetting Darkness=14: "\r\nDENSITY 14"
+*FoomaticRIPOptionSetting Darkness=14: "44454e534954592031340d0a"
 *Darkness 15/15: ""
-*FoomaticRIPOptionSetting Darkness=15: "\r\nDENSITY 15"
+*FoomaticRIPOptionSetting Darkness=15: "44454e534954592031350d0a"
 *CloseUI: *Darkness
 
 *OpenUI *PrintSpeed/Print Speed: PickOne
@@ -194,21 +180,21 @@
 *OrderDependency: 400 AnySetup *PrintSpeed
 *DefaultPrintSpeed: 4
 *PrintSpeed 1/1: ""
-*FoomaticRIPOptionSetting PrintSpeed=1: "\r\nSPEED 1"
+*FoomaticRIPOptionSetting PrintSpeed=1: "535045454420310d0a"
 *PrintSpeed 2/2: ""
-*FoomaticRIPOptionSetting PrintSpeed=2: "\r\nSPEED 2"
+*FoomaticRIPOptionSetting PrintSpeed=2: "535045454420320d0a"
 *PrintSpeed 3/3: ""
-*FoomaticRIPOptionSetting PrintSpeed=3: "\r\nSPEED 3"
+*FoomaticRIPOptionSetting PrintSpeed=3: "535045454420330d0a"
 *PrintSpeed 4/4: ""
-*FoomaticRIPOptionSetting PrintSpeed=4: "\r\nSPEED 4"
+*FoomaticRIPOptionSetting PrintSpeed=4: "535045454420340d0a"
 *PrintSpeed 5/5: ""
-*FoomaticRIPOptionSetting PrintSpeed=5: "\r\nSPEED 5"
+*FoomaticRIPOptionSetting PrintSpeed=5: "535045454420350d0a"
 *PrintSpeed 6/6: ""
-*FoomaticRIPOptionSetting PrintSpeed=6: "\r\nSPEED 6"
+*FoomaticRIPOptionSetting PrintSpeed=6: "535045454420360d0a"
 *PrintSpeed 7/7: ""
-*FoomaticRIPOptionSetting PrintSpeed=7: "\r\nSPEED 7"
+*FoomaticRIPOptionSetting PrintSpeed=7: "535045454420370d0a"
 *PrintSpeed 8/8: ""
-*FoomaticRIPOptionSetting PrintSpeed=8: "\r\nSPEED 8"
+*FoomaticRIPOptionSetting PrintSpeed=8: "535045454420380d0a"
 *CloseUI: *PrintSpeed
 
 *DefaultFont: Courier

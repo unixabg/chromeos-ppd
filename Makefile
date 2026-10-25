@@ -10,4 +10,4 @@ check: ppds
 emulator:
 	bash tests/chromeos/build.sh
 test: ppds
-	python3 tests/chromeos/emulate.py
+	python3 tests/chromeos/emulate.py --pages 2

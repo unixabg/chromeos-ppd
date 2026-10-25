@@ -13,8 +13,9 @@ For each PPD it prints a test page at the PPD's default size (or your PDF):
       PDF -> pdftops + pstops with the PPD (inserts the PPD's PostScript
              options, as CUPS does) -> foomatic-rip (as above)
 
-It fails if foomatic_shell rejects anything, if the job is empty, or if
-the preview shows a mostly black page (wrong polarity). Output jobs and
+It fails if foomatic_shell rejects anything, if the job is empty, if the
+job doesn't decode (wrong bitmap size), or if the preview shows a mostly
+black page (wrong polarity). Multi-page test: --pages N. Output jobs and
 preview PNGs go to tests/out/.
 """
 import argparse
@@ -47,15 +48,15 @@ def ppd_info(path):
                 pdf_mode=pdf_mode)
 
 
-def make_test_pdf(w, h, path):
-    """A test page: border, title, solid and grey squares, a diagonal."""
+def make_test_pdf(w, h, path, pages=1):
+    """Test pages: border, 'PAGE n', solid and grey squares, a diagonal."""
     s = min(w, h)
-    ps = f"""%!PS
-<< /PageSize [{w} {h}] >> setpagedevice
-0 setgray {max(2, s/50):.2f} setlinewidth
+    ps = f"%!PS\n<< /PageSize [{w} {h}] >> setpagedevice\n"
+    for n in range(1, pages + 1):
+        ps += f"""0 setgray {max(2, s/50):.2f} setlinewidth
 {s/30:.2f} {s/30:.2f} {w - s/15:.2f} {h - s/15:.2f} rectstroke
 /Helvetica-Bold findfont {s/9:.2f} scalefont setfont
-{s/12:.2f} {h - s/5:.2f} moveto (TEST PAGE) show
+{s/12:.2f} {h - s/5:.2f} moveto (PAGE {n}) show
 {s/12:.2f} {s/12:.2f} {s/4:.2f} {s/4:.2f} rectfill
 0.5 setgray {s/12 + s/3:.2f} {s/12:.2f} {s/4:.2f} {s/4:.2f} rectfill
 0 setgray {w*0.7:.2f} {s/12:.2f} moveto {w - s/12:.2f} {s/12 + s/4:.2f} lineto stroke
@@ -100,6 +101,16 @@ def run(ppd, pdf, job_out):
     return True, "%d bytes" % len(r.stdout), info
 
 
+def black_bit(ppd):
+    """The printer's bitmap polarity, from the profile the PPD came from."""
+    m = re.search(r"profiles/([\w.-]+)\.json", open(ppd, encoding="latin-1").read())
+    path = os.path.join(ROOT, "profiles", m.group(1) + ".json") if m else ""
+    if os.path.exists(path):
+        import json
+        return int(json.load(open(path)).get("black_bit", 1))
+    return None
+
+
 def black_fraction(img):
     hist = img.convert("L").histogram()
     return sum(hist[:128]) / max(1, sum(hist))
@@ -110,6 +121,8 @@ def main():
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("ppds", nargs="*")
     ap.add_argument("--pdf", help="print this PDF instead of a generated test page")
+    ap.add_argument("--pages", type=int, default=1,
+                    help="pages in the generated test document (checks they all print)")
     args = ap.parse_args()
     if not os.access(FOOMATIC_RIP, os.X_OK):
         sys.exit("Run  bash tests/chromeos/build.sh  first.")
@@ -121,15 +134,25 @@ def main():
         info = ppd_info(ppd)
         pdf = args.pdf or os.path.join(OUT, name + "-test.pdf")
         if not args.pdf:
-            make_test_pdf(info["w"], info["h"], pdf)
+            make_test_pdf(info["w"], info["h"], pdf, args.pages)
         job = os.path.join(OUT, name + ".job")
         ok, msg, info = run(ppd, pdf, job)
         if ok:
-            pages = (preview.escpos_pages(open(job, "rb").read(), 1) if info["pdf_mode"]
-                     else preview.tspl_pages(open(job, "rb").read(), 0))
+            data = open(job, "rb").read()
+            bb = black_bit(ppd)
+            pages = (preview.escpos_pages(data, 1 if bb is None else bb) if b"\x1dv0" in data
+                     else preview.tspl_pages(data, 0 if bb is None else bb))
+            if b"\x1dv0" in data:            # ESC/POS: one raster block per page
+                pages = pages if data.count(b"\x1dv0") == len(pages) else pages
+                count = data.count(b"\x1dv0")
+            else:
+                count = len(pages)
             if not pages:
                 ok, msg = False, "job has no printable image"
+            elif not args.pdf and count != args.pages:
+                ok, msg = False, "%d of %d pages printed" % (count, args.pages)
             else:
+                msg += ", %d page(s)" % count
                 pages[0].save(os.path.join(OUT, name + ".png"))
                 bf = black_fraction(pages[0])
                 msg += ", %.0f%% black" % (bf * 100)

@@ -29,7 +29,7 @@ import sys
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(HERE)
-VERSION = "1.0.0"
+VERSION = "1.1.0"
 
 INVERT_PS = "<</BeginPage{pop{1 exch sub}settransfer}>>setpagedevice"
 
@@ -206,15 +206,154 @@ BACKENDS = {"tspl": backend_tspl, "escpos": backend_escpos}
 
 
 # ----------------------------------------------------------------------------
+# "uniprint" engine (default): one Ghostscript run, every page printed.
+#
+# Ghostscript's uniprint device, given a non-empty upBeginPageCommand, writes
+#     upBeginJobCommand
+#     for each page: upBeginPageCommand + raw 1-bit rows + upEndPageCommand
+#     upEndJobCommand
+# Its native polarity is 0 = black; upWhiteTransfer={1.0 0.0} flips it to
+# 1 = black. The commands are PostScript hex strings, so option values are hex.
+# Everything runs in PDF mode with a bare "gs" command.
+# ----------------------------------------------------------------------------
+
+UNIPRINT = ("gs -q -dSAFER -dBATCH -dNOPAUSE -dQUIET -sDEVICE=uniprint "
+            "-dupColorModel=/DeviceGray -dupRendering=/ErrorDiffusion "
+            "-dupOutputFormat=/SunRaster '-dupComponentBits={{1}}'{transfer} "
+            "-r{dpi} -dFIXEDMEDIA -dPDFFitPage -dPSFitPage")
+
+
+def hx(data):
+    return (data.encode("latin-1") if isinstance(data, str) else data).hex()
+
+
+def uniprint_cmdline(prof, job_start="", page_start="", page_end="", job_end="",
+                     spots=""):
+    """Assemble the gs command. Spot letters present in `spots` are pasted in:
+    D -> job start, A -> page start (PageSize must be last: it closes the
+    argument and adds -g), B -> page end, C -> job end."""
+    transfer = " '-dupWhiteTransfer={1.0 0.0}'" if int(prof.get("black_bit", 1)) == 1 else ""
+    parts = [UNIPRINT.format(transfer=transfer, dpi=prof["dpi"])]
+    if job_start or "D" in spots:
+        parts.append("'-dupBeginJobCommand=<%s%s>'" % (hx(job_start), "%D" if "D" in spots else ""))
+    if page_end or "B" in spots:
+        parts.append("'-dupEndPageCommand=<%s%s>'" % (hx(page_end), "%B" if "B" in spots else ""))
+    if job_end or "C" in spots:
+        parts.append("'-dupEndJobCommand=<%s%s>'" % ("%C" if "C" in spots else "", hx(job_end)))
+    parts.append("'-dupBeginPageCommand=<%s%%A -sOutputFile=- -" % hx(page_start))
+    return " ".join(parts)
+
+
+def size_close(prof, wpt, hpt, header):
+    """PageSize setting: last bytes of the page header, close the argument,
+    then the raster size. uniprint's SunRaster rows are padded to an even
+    number of bytes, so the width is rounded up to a multiple of 16 dots."""
+    wb = math.ceil(dots(wpt, prof["dpi"]) / 16) * 2
+    hd = dots(hpt, prof["dpi"])
+    return "%s>' -g%dx%d" % (hx(header(wb, hd, wpt, hpt)), wb * 8, hd)
+
+
+def uniprint_tspl(prof, sizes):
+    t = prof["tspl"]
+    mode = int(t.get("bitmap_mode", 1))
+    page_start = "".join(x + "\r\n" for x in t.get("prefix", ["REFERENCE 0,0", "OFFSET 0"]))
+    after = "".join(x + "\r\n" for x in t.get("after_options", ["DIRECTION 0,0"]))
+    page_end = "\r\n" + t.get("print", "PRINT 1,1") + "\r\n"
+
+    def header(wb, hd, wpt, hpt):
+        return "%sSIZE %.2f mm,%.2f mm\r\nCLS\r\nBITMAP 0,0,%d,%d,%d," % (
+            after, wpt / 72 * 25.4, hpt / 72 * 25.4, wb, hd, mode)
+
+    size_settings = [(key, size_close(prof, wpt, hpt, header))
+                     for key, label, wpt, hpt, _ in sizes]
+    media = t.get("media_types", [list(m) for m in TSPL_MEDIA])
+    dk = t.get("darkness", {"min": 1, "max": 15, "default": 8, "command": "DENSITY {}"})
+    sp = t.get("speed", {"min": 1, "max": 8, "default": 4, "command": "SPEED {}"})
+    options = [
+        dict(name="MediaType", label="Media Type", order=200, spot="A",
+             default=t.get("media_default", media[0][0]),
+             choices=[(m[0], m[1], hx(m[2] + "\r\n")) for m in media]),
+        dict(name="Darkness", label="Darkness", order=300, spot="A", default=str(dk["default"]),
+             choices=[(str(d), str(d), hx(dk["command"].format(d) + "\r\n"))
+                      for d in range(dk["min"], dk["max"] + 1)]),
+        dict(name="PrintSpeed", label="Print Speed", order=400, spot="A",
+             default=str(sp["default"]),
+             choices=[(str(s), str(s), hx(sp["command"].format(s) + "\r\n"))
+                      for s in range(sp["min"], sp["max"] + 1)]),
+    ]
+    cmdline = uniprint_cmdline(prof, page_start=page_start, page_end=page_end, spots="A")
+    return cmdline, options, size_settings
+
+
+def uniprint_escpos(prof, sizes):
+    e = prof["escpos"]
+    max_rows = int(e.get("max_rows", 4095))
+
+    def header(wb, hd, wpt, hpt):
+        if hd > max_rows:
+            raise SystemExit("a %d-row page is more than max_rows %d" % (hd, max_rows))
+        return b"\x1dv0\x00" + bytes([wb & 0xFF, wb >> 8, hd & 0xFF, hd >> 8])
+
+    size_settings = [(key, size_close(prof, wpt, hpt, header))
+                     for key, label, wpt, hpt, _ in sizes]
+    feed_default = int(e.get("feed_lines_default", 4))
+    cuts = e.get("cut_hex", {"partial": "1d564200", "full": "1d564100"})
+    cut_choices = [("None", "No cut", "")]
+    if cuts.get("partial"):
+        cut_choices.append(("Partial", "Partial cut", cuts["partial"]))
+    if cuts.get("full"):
+        cut_choices.append(("Full", "Full cut", cuts["full"]))
+    page_cut_choices = [("None", "No (pages print as one continuous receipt)", "")] + [
+        (k, "%s after every page" % lbl.split()[0], h) for k, lbl, h in cut_choices[1:]]
+    feeds = (0, 1, 2, 3, 4, 5, 6, 8, 10)
+    options = [
+        dict(name="PageCut", label="Cut between pages", order=500, spot="B", default="None",
+             choices=[(k, l, (b"\x1bd\x04".hex() + h) if h else "")
+                      for k, l, h in page_cut_choices]),
+        dict(name="FeedLines", label="Feed before final cut (lines)", order=600, spot="C",
+             default=str(feed_default),
+             choices=[(str(n), str(n), b"\x1bd".hex() + "%02x" % n if n else "")
+                      for n in feeds]),
+        dict(name="Cut", label="Cut at end of job", order=700, spot="C",
+             default=e.get("cut_default", "Partial" if cuts.get("partial") else "None"),
+             choices=cut_choices),
+    ]
+    spots = "ABC"
+    if e.get("drawer_hex"):
+        options.append(dict(name="CashDrawer", label="Open cash drawer", order=100, spot="D",
+                            default="None",
+                            choices=[("None", "No", ""), ("Before", "Before printing",
+                                                          e["drawer_hex"])]))
+        options.append(dict(name="CashDrawerAfter", label="Open cash drawer after printing",
+                            order=800, spot="C", default="None",
+                            choices=[("None", "No", ""), ("After", "After printing",
+                                                          e["drawer_hex"])]))
+        spots += "D"
+    cmdline = uniprint_cmdline(prof, job_start=hexbytes(e.get("init_hex", "1b40")),
+                               spots=spots)
+    return cmdline, options, size_settings
+
+
+UNIPRINT_BACKENDS = {"tspl": uniprint_tspl, "escpos": uniprint_escpos}
+
+
+# ----------------------------------------------------------------------------
 
 def generate(prof):
     lang = prof["language"]
+    engine = prof.get("engine", "uniprint")
     if lang not in BACKENDS:
         raise SystemExit("language %r not supported yet" % lang)
-    ps_mode = int(prof.get("black_bit", 1)) == 0
     sizes = size_entries(prof)
     default = next(s[0] for s in sizes if s[4])
-    cmdline, options, size_settings = BACKENDS[lang](prof, sizes, ps_mode)
+    if engine == "uniprint":
+        ps_mode = False
+        cmdline, options, size_settings = UNIPRINT_BACKENDS[lang](prof, sizes)
+    elif engine == "bit":
+        ps_mode = int(prof.get("black_bit", 1)) == 0
+        cmdline, options, size_settings = BACKENDS[lang](prof, sizes, ps_mode)
+    else:
+        raise SystemExit("engine must be 'uniprint' or 'bit'")
 
     mfg, mdl = prof["manufacturer"], prof["model"]
     nick = "%s %s, %s ChromeOS (chromeos-thermal-ppd %s%s)" % (
@@ -228,7 +367,9 @@ def generate(prof):
     w("*% Status: " + prof.get("status", "draft") + ". Profile notes:")
     for note in prof.get("notes", []):
         w("*%   " + note)
-    w("*% Runs only printf + Ghostscript, as allowed by ChromeOS foomatic_shell.")
+    w("*% Engine: " + engine + ("  (one Ghostscript run, every page printed)" if engine == "uniprint"
+                                else "  (printf + Ghostscript bit device, first page only)"))
+    w("*% Uses only commands allowed by ChromeOS foomatic_shell.")
     w('*FormatVersion: "4.3"')
     w('*FileVersion: "%s"' % VERSION)
     w("*LanguageVersion: English")

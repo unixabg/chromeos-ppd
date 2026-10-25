@@ -12,8 +12,8 @@ Linux.
 
 | Printer | Language | Connection tested | Status | PPD |
 |---|---|---|---|---|
-| Munbyn RW403B-N | TSPL | USB | ✅ Tested on ChromeOS (managed guest session) and Linux CUPS | [`ppd/munbyn-rw403b-n.ppd`](ppd/munbyn-rw403b-n.ppd) |
-| Rongta RP850P (80 mm) | ESC/POS | USB | 🧪 Tested on Linux CUPS; ChromeOS test pending | [`ppd/rongta-rp850p.ppd`](ppd/rongta-rp850p.ppd) |
+| Munbyn RW403B-N | TSPL | USB | ✅ Tested on ChromeOS (managed guest session) and Linux CUPS (v1.0); multi-page v1.1 retest pending | [`ppd/munbyn-rw403b-n.ppd`](ppd/munbyn-rw403b-n.ppd) |
+| Rongta RP850P (80 mm) | ESC/POS | USB | ✅ Tested on ChromeOS and Linux CUPS (v1.0); multi-page v1.1 retest pending | [`ppd/rongta-rp850p.ppd`](ppd/rongta-rp850p.ppd) |
 
 Your printer not listed? See [Adding a printer](docs/adding-a-printer.md). It
 takes about 15 minutes with a Linux machine and the printer.
@@ -41,11 +41,15 @@ and set margins to none.
 
 ChromeOS won't run vendor driver programs. It does run PPD commands through a
 locked-down shell (`foomatic_shell`) that allows `printf` and Ghostscript.
-Every PPD here builds the printer's job from those two alone:
+Every PPD here builds the printer's whole job with a single Ghostscript run:
 
 ```
-printf '<printer header>'   ;   gs -sDEVICE=bit <1-bit image>   ;   printf '<footer>'
+gs -sDEVICE=uniprint  + the printer's own bytes before/after the job and every page
 ```
+
+Ghostscript's `uniprint` device writes a custom header before each page's raw
+1-bit image and a custom footer after it, so every page of a document prints
+(a label each, or one continuous receipt), in either bitmap polarity.
 
 The details (polarity, PDF vs PostScript mode, and the ChromeOS traps) are in
 [docs/how-it-works.md](docs/how-it-works.md).
@@ -73,7 +77,6 @@ make test        # run every PPD through the ChromeOS emulator
 
 ## Limitations
 
-- One page per job; later pages are ignored. This suits labels and receipts.
 - Fixed page sizes per printer (listed in its profile). For receipts, choose a
   length that fits your content; shorter is less paper.
 - Languages: TSPL and ESC/POS today. ZPL, EPL and CPCL should work the same

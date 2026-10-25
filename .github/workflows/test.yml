@@ -25,7 +25,7 @@ jobs:
       - name: Build ChromeOS emulator
         run: bash tests/chromeos/build.sh
       - name: Run every PPD through the ChromeOS emulator
-        run: python3 tests/chromeos/emulate.py
+        run: python3 tests/chromeos/emulate.py --pages 2
       - uses: actions/upload-artifact@v4
         if: always()
         with:
