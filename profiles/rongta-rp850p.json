@@ -64,7 +64,7 @@
     "answers": {
       "text": "normal",
       "raster_black1": "normal",
-      "raster_black0": "normal (to confirm: expected a negative)",
+      "raster_black0": "negative of test 2, as expected: confirms 1 = black",
       "raster_tall": "normal",
       "cuts": "A (GS V 0) cut through its own text; B, C, D cut cleanly; partial and full look the same"
     },
