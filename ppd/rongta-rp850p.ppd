@@ -7,7 +7,6 @@
 *%   Use feed-then-cut (GS V 66 0 / GS V 65 0): GS V 0 cuts at once and slices the last printed lines.
 *%   Partial and full cut look the same on this unit. Cash drawer kick (ESC p) not yet tested.
 *%   USB ID 0fe6:811e is shared by many Chinese receipt printers.
-*%   v1.0 (bit engine, single page) printed on ChromeOS (USB) and Linux; v1.1 uniprint engine (multi-page) passes the emulator, real-printer retest pending.
 *% Engine: uniprint  (one Ghostscript run, every page printed)
 *% Uses only commands allowed by ChromeOS foomatic_shell.
 *FormatVersion: "4.3"

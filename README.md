@@ -13,7 +13,7 @@ Linux.
 | Printer | Language | Connection tested | Status | PPD |
 |---|---|---|---|---|
 | Munbyn RW403B-N | TSPL | USB | ✅ Tested on ChromeOS (managed guest session) and Linux CUPS (v1.0); multi-page v1.1 retest pending | [`ppd/munbyn-rw403b-n.ppd`](ppd/munbyn-rw403b-n.ppd) |
-| Rongta RP850P (80 mm) | ESC/POS | USB | ✅ Tested on ChromeOS and Linux CUPS (v1.0); multi-page v1.1 retest pending | [`ppd/rongta-rp850p.ppd`](ppd/rongta-rp850p.ppd) |
+| Rongta RP850P (80 mm) | ESC/POS | USB | ✅ Tested on ChromeOS (multi-page, v1.1) and Linux CUPS | [`ppd/rongta-rp850p.ppd`](ppd/rongta-rp850p.ppd) |
 
 Your printer not listed? See [Adding a printer](docs/adding-a-printer.md). It
 takes about 15 minutes with a Linux machine and the printer.

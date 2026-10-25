@@ -4,6 +4,7 @@
   "model": "RP850P",
   "status": "tested",
   "tested": [
+    "ChromeOS, regular login, USB: 3-page web page printed as one receipt, v1.1 uniprint engine (2026-10-25)",
     "ChromeOS, regular login, USB: web page printed (first page only, v1.0 engine) (2026-10-25)",
     "Linux, CUPS, USB: samples/receipt-80mm-200mm.pdf printed and cut correctly (2026-10-25)",
     "Linux, raw ESC/POS over USB with tools/probe.py (2026-10-25)"
@@ -61,8 +62,7 @@
     "GS v 0 raster, 1 = black; one 1600-row (200 mm) raster prints in full. Longer not yet tested.",
     "Use feed-then-cut (GS V 66 0 / GS V 65 0): GS V 0 cuts at once and slices the last printed lines.",
     "Partial and full cut look the same on this unit. Cash drawer kick (ESC p) not yet tested.",
-    "USB ID 0fe6:811e is shared by many Chinese receipt printers.",
-    "v1.0 (bit engine, single page) printed on ChromeOS (USB) and Linux; v1.1 uniprint engine (multi-page) passes the emulator, real-printer retest pending."
+    "USB ID 0fe6:811e is shared by many Chinese receipt printers."
   ],
   "probe": {
     "answers": {
