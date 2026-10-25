@@ -13,21 +13,19 @@ jobs:
             libfontconfig-dev libjpeg-dev libpng-dev libtiff-dev zlib1g-dev libdbus-1-dev
       - name: PPDs are up to date with profiles
         run: |
-          python3 tools/ppdgen.py --all
+          python3 families/thermal/ppdgen.py --all
           git diff --exit-code ppd/
-      - name: cupstestppd
-        run: for f in ppd/*.ppd; do cupstestppd -W none "$f"; done
       - name: Cache ChromeOS emulator
         uses: actions/cache@v4
         with:
-          path: tests/chromeos/build
-          key: chromeos-emulator-${{ hashFiles('tests/chromeos/build.sh', 'tests/chromeos/stub/**', 'tests/chromeos/fsmain.cc') }}
+          path: checker/emulator/build
+          key: chromeos-emulator-${{ hashFiles('checker/emulator/build.sh', 'checker/emulator/stub/**', 'checker/emulator/fsmain.cc') }}
       - name: Build ChromeOS emulator
-        run: bash tests/chromeos/build.sh
-      - name: Run every PPD through the ChromeOS emulator
-        run: python3 tests/chromeos/emulate.py --pages 2
+        run: bash checker/emulator/build.sh
+      - name: ChromeOS checker on every PPD (2-page document)
+        run: python3 checker/chromeos_ppd_check.py ppd/*.ppd --pages 2
       - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: previews
-          path: tests/out/
+          path: check-out/

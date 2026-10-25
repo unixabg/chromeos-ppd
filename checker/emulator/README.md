@@ -12,7 +12,8 @@ goes near a Chromebook.
   parts of libchrome/brillo that `foomatic_shell` needs (process launching,
   temp files, logging). They don't change how scripts are parsed or verified;
   that code is ChromeOS's own.
-- `emulate.py` prints a test page through each PPD and checks the result.
+- `../chromeos_ppd_check.py` uses the build to run ChromeOS's add-printer test
+  and a real print for any PPD.
 
 What it doesn't cover: ChromeOS's USB/network access, the print dialog, and
 the exact `pdftops` build (your system's `pdftops` + `pstops` is used for

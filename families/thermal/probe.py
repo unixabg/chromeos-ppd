@@ -3,20 +3,20 @@
 
 Sends a short series of numbered test prints straight to the printer (no
 driver, no CUPS) and asks you what came out. From your answers it writes a
-draft profile for tools/ppdgen.py.
+draft profile for families/thermal/ppdgen.py.
 
 Every test print shows its number twice: as N small squares in the top-left
 corner and as large digits in the top-right corner.
 
 Examples
-  sudo python3 tools/probe.py                         # auto-detect USB printer
-  sudo python3 tools/probe.py --size 3x2              # TSPL labels, 3 x 2 inch
-  python3 tools/probe.py --device socket://192.168.1.50:9100 --language escpos
-  sudo python3 tools/probe.py --device /dev/ttyUSB0 --baud 19200 --language escpos
-  sudo python3 tools/probe.py --list                  # show detected printers only
+  sudo python3 families/thermal/probe.py                         # auto-detect USB printer
+  sudo python3 families/thermal/probe.py --size 3x2              # TSPL labels, 3 x 2 inch
+  python3 families/thermal/probe.py --device socket://192.168.1.50:9100 --language escpos
+  sudo python3 families/thermal/probe.py --device /dev/ttyUSB0 --baud 19200 --language escpos
+  sudo python3 families/thermal/probe.py --list                  # show detected printers only
 
 Supported languages: tspl, escpos. Others (ZPL, EPL, CPCL) are welcome as
-contributions; see CONTRIBUTING.md.
+contributions; see families/thermal/adding-a-printer.md.
 """
 import argparse
 import glob
@@ -463,7 +463,7 @@ def main():
         json.dump(prof, f, indent=2)
         f.write("\n")
     print("\nDraft profile written to %s" % report_path)
-    print("Next: review it, copy it to profiles/, and run  python3 tools/ppdgen.py %s"
+    print("Next: review it, copy it to families/thermal/profiles/, and run  python3 families/thermal/ppdgen.py %s"
           % report_path)
 
 

@@ -10,7 +10,7 @@
 #                       foomatic_shell above
 #
 # Sources are downloaded at build time, not stored in this repository.
-# Output goes to tests/chromeos/build/ (git-ignored).
+# Output goes to checker/emulator/build/ (git-ignored).
 #
 # Needs: git curl g++ gcc make pkg-config patch, plus the cups-filters build
 # deps. On Debian/Ubuntu:
@@ -56,6 +56,13 @@ if "$FS" -c "ls /" >/dev/null 2>&1; then
 fi
 
 echo "== 4/4 build foomatic-rip from cups-filters with ChromeOS patches"
+# Rebuild if missing, or if it points at a foomatic_shell in another place
+# (for example after the checkout was moved).
+if [ -x cups-filters/foomatic-rip ] && ! grep -q "\"$FS\"" cups-filters/filter/foomatic-rip/foomaticrip.c; then
+  sed -i "s|char modern_shell\[\] = \"[^\"]*\";|char modern_shell[] = \"$FS\";|" \
+      cups-filters/filter/foomatic-rip/foomaticrip.c
+  make -C cups-filters -s foomatic-rip > cups-filters/make.log 2>&1
+fi
 if [ ! -x cups-filters/foomatic-rip ]; then
   rm -rf cups-filters cf.tar.xz
   for u in "${CF_URLS[@]}"; do

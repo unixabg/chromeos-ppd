@@ -1,88 +1,79 @@
-# chromeos-thermal-ppd
+# chromeos-ppd
 
-ChromeOS-native drivers (PPD files) for thermal label and receipt printers:
-**no browser extension, no vendor software, no print server.** The PPDs work in
-regular ChromeOS sessions, in managed guest sessions, and can be pushed to
-ChromeOS devices from the Google Admin console. They also work with CUPS on
-Linux.
+Printer drivers (PPD files) that work on **ChromeOS**, and a tool that tells
+you whether **any** PPD will.
 
-> Not affiliated with any printer manufacturer. Trademarks belong to their owners.
+ChromeOS can't install vendor driver software. A printer that ChromeOS doesn't
+set up by itself needs a PPD built from what ChromeOS already has: its CUPS
+filters, its Ghostscript, and a locked-down shell. This project collects such
+PPDs, the tools to make them, and a checker that tests a PPD against
+ChromeOS's real rules without needing a Chromebook.
 
-## Supported printers
+> Not affiliated with Google or any printer manufacturer. Trademarks belong to their owners.
 
-| Printer | Language | Connection tested | Status | PPD |
+## 1. Printers
+
+| Printer | Family | Connection tested | Status | PPD |
 |---|---|---|---|---|
-| Munbyn RW403B-N | TSPL | USB | ✅ Tested on ChromeOS (managed guest session) and Linux CUPS (v1.0); multi-page v1.1 retest pending | [`ppd/munbyn-rw403b-n.ppd`](ppd/munbyn-rw403b-n.ppd) |
-| Rongta RP850P (80 mm) | ESC/POS | USB | ✅ Tested on ChromeOS (multi-page, v1.1) and Linux CUPS | [`ppd/rongta-rp850p.ppd`](ppd/rongta-rp850p.ppd) |
+| Munbyn RW403B-N | thermal (TSPL labels) | USB | ✅ ChromeOS (managed guest session) and Linux CUPS (v1.0); multi-page v1.1 retest pending | [`ppd/munbyn-rw403b-n.ppd`](ppd/munbyn-rw403b-n.ppd) |
+| Rongta RP850P (80 mm) | thermal (ESC/POS receipts) | USB | ✅ ChromeOS (multi-page, v1.1) and Linux CUPS | [`ppd/rongta-rp850p.ppd`](ppd/rongta-rp850p.ppd) |
 
-Your printer not listed? See [Adding a printer](docs/adding-a-printer.md). It
-takes about 15 minutes with a Linux machine and the printer.
+PPDs are grouped by **family**, a kind of printer that shares one approach and
+one set of tools. See [families/](families/README.md). Your printer isn't
+listed? Run the checker on its vendor PPD first, then see
+[CONTRIBUTING.md](CONTRIBUTING.md).
 
-## Using a PPD
+### Using a PPD
 
-**Chromebook (regular login):** Settings → Advanced → Print and scan →
-Printers → set up the printer → "specify your printer PPD" → choose the file.
+- **Chromebook:** Settings → Advanced → Print and scan → Printers → set up the
+  printer → "specify your printer PPD" → choose the file.
+- **Managed devices, managed guest sessions, kiosks:** push it from the Google
+  Admin console. See [docs/chromeos-admin-console.md](docs/chromeos-admin-console.md).
+- **Linux:** `sudo lpadmin -p NAME -E -v '<uri from lpinfo -v>' -P ppd/<file>.ppd`
 
-**Managed ChromeOS devices / managed guest sessions / kiosks:** see
-[docs/chromeos-admin-console.md](docs/chromeos-admin-console.md). In short:
-host the PPD on HTTPS, then in the Admin console add the printer with
-Connection **USB** (vendor + product ID) or **Network address**, Setup method
-**Custom PPD file**, and allow it for your org unit.
-
-**Linux (CUPS):**
-```
-sudo lpadmin -p RW403B -E -v 'usb://Munbyn/RW403B-N?serial=…' -P ppd/munbyn-rw403b-n.ppd
-```
-
-When printing, pick the paper size that matches your labels or receipt length
-and set margins to none.
-
-## How it works
-
-ChromeOS won't run vendor driver programs. It does run PPD commands through a
-locked-down shell (`foomatic_shell`) that allows `printf` and Ghostscript.
-Every PPD here builds the printer's whole job with a single Ghostscript run:
+## 2. The checker: will this PPD work on ChromeOS?
 
 ```
-gs -sDEVICE=uniprint  + the printer's own bytes before/after the job and every page
+bash checker/emulator/build.sh                      # once: builds ChromeOS's print sandbox
+python3 checker/chromeos_ppd_check.py some-printer.ppd
 ```
 
-Ghostscript's `uniprint` device writes a custom header before each page's raw
-1-bit image and a custom footer after it, so every page of a document prints
-(a label each, or one continuous receipt), in either bitmap polarity.
+It works on any PPD: a vendor's, one from this repository, or one you wrote.
+It answers two questions, **can ChromeOS add it?** and **will it print?**, by:
 
-The details (polarity, PDF vs PostScript mode, and the ChromeOS traps) are in
-[docs/how-it-works.md](docs/how-it-works.md).
+- running **ChromeOS's own add-printer test** exactly as ChromeOS does
+  (`cupstestppd` with ChromeOS's options, then `foomatic-rip` in verify mode);
+- checking every **filter** the PPD needs against the filters ChromeOS ships,
+  including the third-party ones (DYMO, Star, Epson, TSC, generic ESC/POS, HP,
+  Canon, …), and every **Ghostscript device** against ChromeOS's build;
+- **printing** a test document through ChromeOS's real `foomatic_shell` and
+  ChromeOS-patched `foomatic-rip`, and decoding the output where it can.
+
+```
+=== vendor.ppd
+  FAIL  filters   application/pdf -> /Library/Printers/Acme/pdf_to_tspl: a vendor program;
+                  ChromeOS can't install it, so it refuses the PPD (missing filter)
+  ---- ChromeOS can add it: NO.  Expected to print: NO.
+```
+
+Details: [checker/README.md](checker/README.md). What ChromeOS allows and why:
+[docs/chromeos-printing.md](docs/chromeos-printing.md).
 
 ## Repository layout
 
 ```
-profiles/      one JSON file per printer: language, polarity, commands, sizes
-ppd/           generated PPDs (make ppds)
-tools/
-  probe.py     sends numbered test prints, writes a draft profile from your answers
-  ppdgen.py    profile -> PPD
-  preview.py   renders a printer job (TSPL/ESC/POS) to PNG
-  bitmap.py    test-image helper
-tests/chromeos/  rebuilds ChromeOS's print sandbox locally and runs every PPD through it
-docs/          how it works, adding a printer, Admin console setup
+ppd/                    all PPDs, any family
+families/<family>/      tools and sources for one kind of printer (thermal: profiles, generator, probe)
+checker/                chromeos_ppd_check.py, chromeos-data.json (what ChromeOS ships), emulator/
+docs/                   ChromeOS printing rules, Admin console deployment
+samples/                test documents
 ```
 
 ```
-make ppds        # regenerate PPDs from profiles
-make check       # cupstestppd
-make emulator    # build the ChromeOS emulator (once; downloads sources)
-make test        # run every PPD through the ChromeOS emulator
+make ppds        # regenerate generated PPDs (every family)
+make emulator    # build the ChromeOS sandbox for the checker (once; downloads sources)
+make check       # run the checker on every PPD in ppd/, with a 2-page document
 ```
-
-## Limitations
-
-- Fixed page sizes per printer (listed in its profile). For receipts, choose a
-  length that fits your content; shorter is less paper.
-- Languages: TSPL and ESC/POS today. ZPL, EPL and CPCL should work the same
-  way and are welcome contributions. Printers whose raster format needs extra
-  data on every row (Brother QL, DYMO LabelWriter) can't be driven with the
-  tools ChromeOS allows.
 
 ## License
 

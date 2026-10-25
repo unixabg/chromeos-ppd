@@ -8,12 +8,12 @@ Python 3, CUPS and Ghostscript. A Chromebook is only needed for the final test.
 Plug the printer in by USB and run:
 
 ```
-sudo python3 tools/probe.py --list
+sudo python3 families/thermal/probe.py --list
 ```
 
 This shows the device file (`/dev/usb/lp0`), USB vendor/product ID and the
 printer's own device ID, for example `MFG:Munbyn;CMD:TSPL;MDL:RW403B-N;`. The
-`CMD:` part tells you the language. `tools/probe.py` supports `tspl` and
+`CMD:` part tells you the language. `families/thermal/probe.py` supports `tspl` and
 `escpos`. For other languages, see "New languages" below.
 
 Network printers: use `--device socket://IP:9100 --language …`.
@@ -23,11 +23,11 @@ Serial: `--device /dev/ttyUSB0 --baud 19200 --language …`.
 
 ```
 # TSPL label printer: give the label size, width x length in inches
-sudo python3 tools/probe.py --size 3x2
+sudo python3 families/thermal/probe.py --size 3x2
 
 # ESC/POS receipt printer: give the printable width in dots
 # (576 for 80 mm paper, 384 for 58 mm). --drawer also tests a cash drawer.
-sudo python3 tools/probe.py --dots 576 --drawer
+sudo python3 families/thermal/probe.py --dots 576 --drawer
 ```
 
 Each test print shows its number as small squares top-left and large digits
@@ -42,7 +42,7 @@ The probe writes a draft profile, `probe-<model>.json`.
 
 ## 3. Turn it into a profile
 
-Copy the draft to `profiles/<maker>-<model>.json` and check it:
+Copy the draft to `families/thermal/profiles/<maker>-<model>.json` and check it:
 
 - `id`, `manufacturer`, `model`: tidy names.
 - `black_bit`: 0 or 1, from the polarity tests.
@@ -50,23 +50,22 @@ Copy the draft to `profiles/<maker>-<model>.json` and check it:
 - `usb.vid` / `usb.pid`: needed for the Admin console.
 - Keep `"status": "draft"` until it has printed from a Chromebook.
 
-See `profiles/munbyn-rw403b-n.json` (TSPL) and `profiles/rongta-rp850p.json`
+See `families/thermal/profiles/munbyn-rw403b-n.json` (TSPL) and `families/thermal/profiles/rongta-rp850p.json`
 (ESC/POS) for complete examples.
 
 ## 4. Generate and test
 
 ```
 make ppds           # writes ppd/<id>.ppd
-make check          # cupstestppd
 make emulator       # once
-make test           # ChromeOS emulator: must say PASS
+make check          # ChromeOS checker: must pass
 ```
 
 Then on Linux, print through it for real:
 
 ```
 sudo lpadmin -p TEST -E -v '<usb uri from lpinfo -v>' -P ppd/<id>.ppd
-lp -d TEST tests/out/<id>-test.pdf
+lp -d TEST samples/label-3x2in.pdf      # or samples/receipt-80mm-200mm.pdf
 ```
 
 Finally on a Chromebook: set the printer up with the PPD and print a page.
@@ -82,13 +81,13 @@ connection). A photo of a test print helps.
 The approach works for any language that takes a raster image as one block,
 with fixed bytes before and after. To add one:
 
-1. `tools/probe.py`: add a test suite (see `tspl_suite` / `escpos_suite`):
+1. `families/thermal/probe.py`: add a test suite (see `tspl_suite` / `escpos_suite`):
    polarity both ways, the bitmap command variants, and anything the language
    needs to finish a job (form feed, cut).
-2. `tools/ppdgen.py`: add a back-end (see `backend_tspl` / `backend_escpos`)
+2. `families/thermal/ppdgen.py`: add a back-end (see `backend_tspl` / `backend_escpos`)
    that returns the command line, the options and, per page size, the raster
    header + `gs` + footer chunk.
-3. `tools/preview.py`: teach it to draw the new bitmap command.
+3. `families/thermal/preview.py`: teach it to draw the new bitmap command.
 
 Useful starting points: ZPL `^GFB` (binary graphic field, 1 = black), EPL
 `GW`, CPCL `EG`.

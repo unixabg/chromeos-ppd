@@ -1,5 +1,5 @@
-tests/chromeos/build/
-tests/out/
+checker/emulator/build/
+check-out/
 __pycache__/
 *.pyc
 probe-*.json

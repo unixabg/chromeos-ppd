@@ -2,7 +2,7 @@
 """Render a printer job (TSPL or ESC/POS) to a PNG, as the printer would print
 it, so you can check a PPD's output without wasting labels or paper.
 
-    python3 tools/preview.py job.bin out.png [--black-bit 0|1]
+    python3 families/thermal/preview.py job.bin out.png [--black-bit 0|1]
 
 The language is detected from the data. --black-bit is the printer's bitmap
 polarity (TSPL default 0, ESC/POS default 1); use the profile's black_bit.

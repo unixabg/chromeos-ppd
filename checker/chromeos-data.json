@@ -1,0 +1,294 @@
+{
+  "about": "What ChromeOS provides to PPDs. Collected from chromiumos-overlay (app-text/ghostscript-gpl, net-print/*) and chromiumos/platform2 (foomatic_shell, debugd) in October 2026. Update when ChromeOS changes.",
+  "add_printer_check": {
+    "source": "platform2 debugd/src/cups_tool.cc TestPPD + lp_tools.cc CupsTestPpd",
+    "min_size": 200,
+    "cupstestppd_args": [
+      "-W",
+      "translations",
+      "-W",
+      "constraints",
+      "-"
+    ],
+    "foomatic_verify_pdf": "%PDF-1.0\n1 0 obj<</Type/Catalog/Pages 2 0 R>>endobj 2 0 obj<</Type/Pages/Kids[3 0 R]/Count 1>>endobj 3 0 obj<</Type/Page/MediaBox[0 0 3 3]>>endobj\nxref\n0 4\n0000000000 65535 f \n0000000009 00000 n \n0000000052 00000 n \n0000000101 00000 n \ntrailer<</Size 4/Root 1 0 R>>\nstartxref\n147\n%EOF"
+  },
+  "foomatic_shell_commands": [
+    "cat",
+    "cut",
+    "date",
+    "echo",
+    "gs",
+    "pdftops",
+    "printf",
+    "sed"
+  ],
+  "ghostscript_devices": [
+    "ap3250",
+    "bit",
+    "bj10e",
+    "bj200",
+    "bjc600",
+    "bjc800",
+    "bjc880j",
+    "bjccolor",
+    "cdj500",
+    "cdj550",
+    "cdnj500",
+    "cljet5c",
+    "cups",
+    "cups)",
+    "declj250",
+    "djet500",
+    "dnj650c",
+    "epl2050",
+    "eplcolor",
+    "eps9high",
+    "eps9mid",
+    "epson",
+    "epsonc",
+    "hl1250",
+    "ibmpro",
+    "imagen",
+    "jetp3852",
+    "laserjet",
+    "lbp8",
+    "lips2p",
+    "lips3",
+    "lips4",
+    "ljet2p",
+    "ljet3",
+    "ljet4",
+    "ljetplus",
+    "lp1800",
+    "lp1900",
+    "lp2200",
+    "lp2400",
+    "lp2500",
+    "lp2563",
+    "lp3000c",
+    "lp7500",
+    "lp7700",
+    "lp7900",
+    "lp8000",
+    "lp8000c",
+    "lp8100",
+    "lp8200c",
+    "lp8300c",
+    "lp8300f",
+    "lp8400f",
+    "lp8500c",
+    "lp8600",
+    "lp8600f",
+    "lp8700",
+    "lp8800c",
+    "lp8900",
+    "lp9000b",
+    "lp9000c",
+    "lp9100",
+    "lp9200b",
+    "lp9200c",
+    "lp9300",
+    "lp9400",
+    "lp9500c",
+    "lp9600",
+    "lp9600s",
+    "lp9800c",
+    "lps4500",
+    "lps6500",
+    "lq850",
+    "lxm5700m",
+    "m8510",
+    "necp6",
+    "npdl",
+    "oce9050",
+    "oki182",
+    "okiibm",
+    "pcl3",
+    "pdfwrite",
+    "picty180",
+    "pjxl300",
+    "ppmraw",
+    "ps2write",
+    "pxlcolor",
+    "pxlmono",
+    "r4081",
+    "sj48",
+    "stcolor",
+    "t4693d4",
+    "tek4696",
+    "uniprint"
+  ],
+  "filters": {
+    "commandtops": {
+      "package": "cups 2.4",
+      "for": "CUPS core"
+    },
+    "gziptoany": {
+      "package": "cups 2.4",
+      "for": "CUPS core"
+    },
+    "pstops": {
+      "package": "cups 2.4",
+      "for": "CUPS core"
+    },
+    "rastertoepson": {
+      "package": "cups 2.4",
+      "for": "CUPS core"
+    },
+    "rastertohp": {
+      "package": "cups 2.4",
+      "for": "CUPS core"
+    },
+    "rastertolabel": {
+      "package": "cups 2.4",
+      "for": "CUPS core"
+    },
+    "rastertopwg": {
+      "package": "cups 2.4",
+      "for": "CUPS core"
+    },
+    "foomatic-rip": {
+      "package": "cups-filters 1.28.17 (ChromeOS build)",
+      "for": "cups-filters"
+    },
+    "pdftopdf": {
+      "package": "cups-filters 1.28.17 (ChromeOS build)",
+      "for": "cups-filters"
+    },
+    "pdftops": {
+      "package": "cups-filters 1.28.17 (ChromeOS build)",
+      "for": "cups-filters"
+    },
+    "gstoraster": {
+      "package": "cups-filters 1.28.17 (ChromeOS build)",
+      "for": "cups-filters"
+    },
+    "pstoraster": {
+      "package": "cups-filters 1.28.17 (ChromeOS build)",
+      "for": "cups-filters"
+    },
+    "gstopxl": {
+      "package": "cups-filters 1.28.17 (ChromeOS build)",
+      "for": "cups-filters"
+    },
+    "pstopxl": {
+      "package": "cups-filters 1.28.17 (ChromeOS build)",
+      "for": "cups-filters"
+    },
+    "gstopdf": {
+      "package": "cups-filters 1.28.17 (ChromeOS build)",
+      "for": "cups-filters"
+    },
+    "commandtoescpx": {
+      "package": "cups-filters 1.28.17 (ChromeOS build)",
+      "for": "cups-filters"
+    },
+    "commandtopclx": {
+      "package": "cups-filters 1.28.17 (ChromeOS build)",
+      "for": "cups-filters"
+    },
+    "texttotext": {
+      "package": "cups-filters 1.28.17 (ChromeOS build)",
+      "for": "cups-filters"
+    },
+    "rastertoescpx": {
+      "package": "cups-filters 1.28.17 (ChromeOS build)",
+      "for": "cups-filters"
+    },
+    "rastertopclx": {
+      "package": "cups-filters 1.28.17 (ChromeOS build)",
+      "for": "cups-filters"
+    },
+    "texttopdf": {
+      "package": "cups-filters 1.28.17 (ChromeOS build)",
+      "for": "cups-filters"
+    },
+    "rastertopdf": {
+      "package": "cups-filters 1.28.17 (ChromeOS build)",
+      "for": "cups-filters"
+    },
+    "bannertopdf": {
+      "package": "cups-filters 1.28.17 (ChromeOS build)",
+      "for": "cups-filters"
+    },
+    "rastertops": {
+      "package": "cups-filters 1.28.17 (ChromeOS build)",
+      "for": "cups-filters"
+    },
+    "imagetops": {
+      "package": "cups-filters 1.28.17 (ChromeOS build)",
+      "for": "cups-filters"
+    },
+    "texttops": {
+      "package": "cups-filters 1.28.17 (ChromeOS build)",
+      "for": "cups-filters"
+    },
+    "rastertopclm": {
+      "package": "cups-filters 1.28.17 (ChromeOS build)",
+      "for": "cups-filters"
+    },
+    "rastertoescpos": {
+      "package": "cups-filter-rastertoescpos",
+      "for": "generic ESC/POS thermal receipt printers"
+    },
+    "rastertobarcodetspl": {
+      "package": "tsc-cupsdrv",
+      "for": "TSC (TSPL) label printers"
+    },
+    "rastertostar": {
+      "package": "starcupsdrv",
+      "for": "Star Micronics printers"
+    },
+    "rastertostarlm": {
+      "package": "starcupsdrv",
+      "for": "Star Micronics printers"
+    },
+    "rastertostarm": {
+      "package": "starcupsdrv",
+      "for": "Star Micronics printers"
+    },
+    "rastertotmtr": {
+      "package": "epson-receipt-printer-thermal",
+      "for": "Epson TM receipt printers"
+    },
+    "raster2dymolw": {
+      "package": "dymo-cups-drivers",
+      "for": "DYMO LabelWriter / LabelManager"
+    },
+    "raster2dymolm": {
+      "package": "dymo-cups-drivers",
+      "for": "DYMO LabelWriter / LabelManager"
+    },
+    "hpcups": {
+      "package": "hplip",
+      "for": "HP printers"
+    },
+    "hpps": {
+      "package": "hplip",
+      "for": "HP printers"
+    },
+    "pwgtocanonij": {
+      "package": "pwgtocanonij",
+      "for": "Canon inkjet printers"
+    },
+    "epson-escpr": {
+      "package": "epson-inkjet-printer-escpr",
+      "for": "Epson inkjet printers (ESC/P-R)"
+    },
+    "epson-escpr-wrapper": {
+      "package": "epson-inkjet-printer-escpr",
+      "for": "Epson inkjet printers (ESC/P-R)"
+    },
+    "epson_colorworks": {
+      "package": "epson-inkjet-printer-colorworks",
+      "for": "Epson ColorWorks label printers"
+    },
+    "rastertohwasung": {
+      "package": "hwasung-cupsdrv",
+      "for": "Hwasung receipt printers"
+    }
+  },
+  "filter_name_patterns": {
+    "^raster[tT]o": "Custom (custom-cupsdrv) installs filters named rasterto*/rasterTo* per model; check the name on a Chromebook"
+  }
+}

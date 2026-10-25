@@ -80,7 +80,7 @@ the real printer, not on the language manual.
 
 ## Testing without a Chromebook
 
-`tests/chromeos/` builds ChromeOS's real `foomatic_shell` and a ChromeOS-patched
+The [checker](../../checker/README.md) builds ChromeOS's real `foomatic_shell` and a ChromeOS-patched
 `foomatic-rip` and runs each PPD through them, including multi-page documents
 (`--pages N`). It reports the same errors ChromeOS would ("gs: disallowed
 name", parse errors), checks the bitmap sizes decode, counts the pages and
