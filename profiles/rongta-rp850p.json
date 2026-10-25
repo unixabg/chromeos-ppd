@@ -3,18 +3,20 @@
   "manufacturer": "Rongta",
   "model": "RP850P",
   "status": "draft",
-  "tested": [],
-  "ieee1284_id": "",
+  "tested": [
+    "Linux, raw ESC/POS over USB with tools/probe.py (2026-10-25); PPD not yet printed"
+  ],
+  "ieee1284_id": "MANUFACTURER:USB ;MODEL:80Series2;COMMENDSET:EPSON;CLASS:PRINTER;DESCRIPTION:RONGTA;",
   "usb": {
-    "vid": "",
-    "pid": ""
+    "vid": "0fe6",
+    "pid": "811e"
   },
   "language": "escpos",
   "dpi": 203,
   "black_bit": 1,
   "escpos": {
     "printable_width_mm": 72,
-    "max_rows": 4095,
+    "max_rows": 1600,
     "init_hex": "1b40",
     "feed_lines_default": 4,
     "cut_hex": {
@@ -49,23 +51,31 @@
       "width_mm": 72,
       "height_mm": 200,
       "default": true
-    },
-    {
-      "key": "X80MMY297",
-      "label": "80 mm roll, 297 mm long",
-      "width_mm": 72,
-      "height_mm": 297
-    },
-    {
-      "key": "X80MMY400",
-      "label": "80 mm roll, 400 mm long",
-      "width_mm": 72,
-      "height_mm": 400
     }
   ],
   "notes": [
-    "DRAFT from the ESC/POS standard: GS v 0 raster (1 = black), GS V 66 0 partial cut, ESC p cash drawer.",
-    "Run tools/probe.py on the printer to confirm polarity, tall rasters, cut commands and USB IDs.",
-    "80 mm paper, 72 mm (576 dots) printable. Each size is one receipt page; longer pages waste paper."
-  ]
+    "Reports itself over USB as an Epson TM-T88III, firmware '7.03 ESC/POS' (GS I 66/67/65); IEEE-1284 ID says COMMENDSET:EPSON. Answers DLE EOT status queries.",
+    "GS v 0 raster, 1 = black; one 1600-row (200 mm) raster prints in full. Longer not yet tested.",
+    "Use feed-then-cut (GS V 66 0 / GS V 65 0): GS V 0 cuts at once and slices the last printed lines.",
+    "Partial and full cut look the same on this unit. Cash drawer kick (ESC p) not yet tested.",
+    "USB ID 0fe6:811e is shared by many Chinese receipt printers."
+  ],
+  "probe": {
+    "answers": {
+      "text": "normal",
+      "raster_black1": "normal",
+      "raster_black0": "normal (to confirm: expected a negative)",
+      "raster_tall": "normal",
+      "cuts": "A (GS V 0) cut through its own text; B, C, D cut cleanly; partial and full look the same"
+    },
+    "status_replies": {
+      "DLE EOT 1": "16",
+      "DLE EOT 2": "12",
+      "DLE EOT 3": "12",
+      "DLE EOT 4": "12",
+      "GS I 66 maker": "_EPSON",
+      "GS I 67 model": "_TM-T88III",
+      "GS I 65 firmware": "_7.03 ESC/POS"
+    }
+  }
 }

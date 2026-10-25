@@ -135,7 +135,10 @@ def language_from_cmd(cmd):
     c = cmd.upper().replace(" ", "")
     if "TSPL" in c or "TSC" in c:
         return "tspl"
-    if "ESC/POS" in c or "ESCPOS" in c or c.startswith("POS"):
+    # Many receipt printers just say "EPSON" (meaning Epson's ESC/POS), e.g.
+    # Rongta: COMMENDSET:EPSON. "ESC/P", "ESCP2", "ESCPL2" are Epson inkjet
+    # languages and are not matched here.
+    if "ESC/POS" in c or "ESCPOS" in c or c.startswith("POS") or c == "EPSON":
         return "escpos"
     if "ZPL" in c:
         return "zpl"
@@ -164,8 +167,16 @@ def detect_usb():
             except OSError:
                 pass
         f = parse_1284(info["ieee1284_id"])
-        info["language"] = language_from_cmd(f.get("CMD", f.get("COMMAND SET", "")))
-        info["mfg"] = f.get("MFG", f.get("MANUFACTURER", info.get("manufacturer", "")))
+        # Key names vary: CMD, COMMAND SET, COMMANDSET, even COMMENDSET (Rongta).
+        cmd = next((f[k] for k in ("CMD", "COMMAND SET", "COMMANDSET", "COMMENDSET")
+                    if k in f), "")
+        info["language"] = language_from_cmd(cmd)
+        mfg = f.get("MFG", f.get("MANUFACTURER", info.get("manufacturer", "")))
+        # Some printers report a placeholder maker ("USB") and the real one
+        # in DESCRIPTION (Rongta: DESCRIPTION:RONGTA).
+        if mfg.upper() in ("", "USB", "PRINTER", "GENERIC") and f.get("DESCRIPTION"):
+            mfg = f["DESCRIPTION"].title()
+        info["mfg"] = mfg
         info["mdl"] = f.get("MDL", f.get("MODEL", info.get("product", "")))
         found.append(info)
     return found
