@@ -1,0 +1,5 @@
+tests/chromeos/build/
+tests/out/
+__pycache__/
+*.pyc
+probe-*.json

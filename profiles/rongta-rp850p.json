@@ -1,0 +1,71 @@
+{
+  "id": "rongta-rp850p",
+  "manufacturer": "Rongta",
+  "model": "RP850P",
+  "status": "draft",
+  "tested": [],
+  "ieee1284_id": "",
+  "usb": {
+    "vid": "",
+    "pid": ""
+  },
+  "language": "escpos",
+  "dpi": 203,
+  "black_bit": 1,
+  "escpos": {
+    "printable_width_mm": 72,
+    "max_rows": 4095,
+    "init_hex": "1b40",
+    "feed_lines_default": 4,
+    "cut_hex": {
+      "partial": "1d564200",
+      "full": "1d564100"
+    },
+    "cut_default": "Partial",
+    "drawer_hex": "1b700019fa"
+  },
+  "sizes": [
+    {
+      "key": "X80MMY50",
+      "label": "80 mm roll, 50 mm long",
+      "width_mm": 72,
+      "height_mm": 50
+    },
+    {
+      "key": "X80MMY100",
+      "label": "80 mm roll, 100 mm long",
+      "width_mm": 72,
+      "height_mm": 100
+    },
+    {
+      "key": "X80MMY150",
+      "label": "80 mm roll, 150 mm long",
+      "width_mm": 72,
+      "height_mm": 150
+    },
+    {
+      "key": "X80MMY200",
+      "label": "80 mm roll, 200 mm long",
+      "width_mm": 72,
+      "height_mm": 200,
+      "default": true
+    },
+    {
+      "key": "X80MMY297",
+      "label": "80 mm roll, 297 mm long",
+      "width_mm": 72,
+      "height_mm": 297
+    },
+    {
+      "key": "X80MMY400",
+      "label": "80 mm roll, 400 mm long",
+      "width_mm": 72,
+      "height_mm": 400
+    }
+  ],
+  "notes": [
+    "DRAFT from the ESC/POS standard: GS v 0 raster (1 = black), GS V 66 0 partial cut, ESC p cash drawer.",
+    "Run tools/probe.py on the printer to confirm polarity, tall rasters, cut commands and USB IDs.",
+    "80 mm paper, 72 mm (576 dots) printable. Each size is one receipt page; longer pages waste paper."
+  ]
+}

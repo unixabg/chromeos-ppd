@@ -1,0 +1,33 @@
+name: test
+on: [push, pull_request]
+jobs:
+  ppds:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ghostscript cups cups-filters python3-pil git curl g++ make \
+            pkg-config patch libcups2-dev libqpdf-dev liblcms2-dev libfreetype-dev \
+            libfontconfig-dev libjpeg-dev libpng-dev libtiff-dev zlib1g-dev libdbus-1-dev
+      - name: PPDs are up to date with profiles
+        run: |
+          python3 tools/ppdgen.py --all
+          git diff --exit-code ppd/
+      - name: cupstestppd
+        run: for f in ppd/*.ppd; do cupstestppd -W none "$f"; done
+      - name: Cache ChromeOS emulator
+        uses: actions/cache@v4
+        with:
+          path: tests/chromeos/build
+          key: chromeos-emulator-${{ hashFiles('tests/chromeos/build.sh', 'tests/chromeos/stub/**', 'tests/chromeos/fsmain.cc') }}
+      - name: Build ChromeOS emulator
+        run: bash tests/chromeos/build.sh
+      - name: Run every PPD through the ChromeOS emulator
+        run: python3 tests/chromeos/emulate.py
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: previews
+          path: tests/out/
