@@ -4,7 +4,8 @@
   "model": "RP850P",
   "status": "draft",
   "tested": [
-    "Linux, raw ESC/POS over USB with tools/probe.py (2026-10-25); PPD not yet printed"
+    "Linux, CUPS, USB: samples/receipt-80mm-200mm.pdf printed and cut correctly (2026-10-25)",
+    "Linux, raw ESC/POS over USB with tools/probe.py (2026-10-25)"
   ],
   "ieee1284_id": "MANUFACTURER:USB ;MODEL:80Series2;COMMENDSET:EPSON;CLASS:PRINTER;DESCRIPTION:RONGTA;",
   "usb": {
