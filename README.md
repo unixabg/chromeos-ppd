@@ -1,5 +1,7 @@
 # chromeos-ppd
 
+[![test](https://github.com/unixabg/chromeos-ppd/actions/workflows/test.yml/badge.svg)](https://github.com/unixabg/chromeos-ppd/actions/workflows/test.yml)
+
 Printer drivers (PPD files) that work on **ChromeOS**, and a tool that tells
 you whether **any** PPD will.
 
