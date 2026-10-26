@@ -34,6 +34,14 @@ Exit status is 0 only if every PPD passed. Jobs, logs and previews go to
 
 ## The emulator
 
+Build dependencies on Debian/Ubuntu:
+
+```
+sudo apt-get install ghostscript cups cups-filters python3-pil git curl g++ make pkg-config patch \
+  libcups2-dev libqpdf-dev liblcms2-dev libfreetype-dev libfontconfig-dev libjpeg-dev \
+  libpng-dev libtiff-dev zlib1g-dev libdbus-1-dev libglib2.0-dev
+```
+
 `emulator/build.sh` downloads ChromeOS's `foomatic_shell` source
 (chromiumos/platform2), ChromeOS's cups-filters patches (chromiumos-overlay)
 and cups-filters 1.28.17, then builds both into `emulator/build/` (git-ignored).

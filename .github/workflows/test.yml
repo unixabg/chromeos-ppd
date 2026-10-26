@@ -10,7 +10,7 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y ghostscript cups cups-filters python3-pil git curl g++ make \
             pkg-config patch libcups2-dev libqpdf-dev liblcms2-dev libfreetype-dev \
-            libfontconfig-dev libjpeg-dev libpng-dev libtiff-dev zlib1g-dev libdbus-1-dev
+            libfontconfig-dev libjpeg-dev libpng-dev libtiff-dev zlib1g-dev libdbus-1-dev libglib2.0-dev
       - name: PPDs are up to date with profiles
         run: |
           python3 families/thermal/ppdgen.py --all

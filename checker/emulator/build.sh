@@ -56,12 +56,17 @@ if "$FS" -c "ls /" >/dev/null 2>&1; then
 fi
 
 echo "== 4/4 build foomatic-rip from cups-filters with ChromeOS patches"
+# Run a quiet build step; on failure show the end of its log instead of failing silently.
+step() { local log="$1"; shift
+  if ! "$@" > "$log" 2>&1; then
+    echo "FAILED: $*  (last lines of $log follow)" >&2; tail -n 40 "$log" >&2; exit 1
+  fi; }
 # Rebuild if missing, or if it points at a foomatic_shell in another place
 # (for example after the checkout was moved).
 if [ -x cups-filters/foomatic-rip ] && ! grep -q "\"$FS\"" cups-filters/filter/foomatic-rip/foomaticrip.c; then
   sed -i "s|char modern_shell\[\] = \"[^\"]*\";|char modern_shell[] = \"$FS\";|" \
       cups-filters/filter/foomatic-rip/foomaticrip.c
-  make -C cups-filters -s foomatic-rip > cups-filters/make.log 2>&1
+  step cups-filters/make.log make -C cups-filters -s foomatic-rip
 fi
 if [ ! -x cups-filters/foomatic-rip ]; then
   rm -rf cups-filters cf.tar.xz
@@ -78,11 +83,11 @@ if [ ! -x cups-filters/foomatic-rip ]; then
   sed -i "s|char modern_shell\[\] = \"/usr/bin/foomatic_shell\";|char modern_shell[] = \"$FS\";|" \
       filter/foomatic-rip/foomaticrip.c
   grep -q "$FS" filter/foomatic-rip/foomaticrip.c
-  ./configure -q --disable-avahi --disable-ldap --disable-mutool --disable-ghostscript \
+  step configure.log ./configure -q --disable-avahi --disable-ldap --disable-mutool --disable-ghostscript \
       --disable-poppler --disable-pdftoraster --disable-imagefilters --disable-driverless \
       --disable-braille --disable-dbus --with-pdftops=gs --without-php --disable-exif \
-      --with-rcdir=no > configure.log 2>&1
-  make -s -j"$(nproc)" foomatic-rip > make.log 2>&1
+      --with-rcdir=no
+  step make.log make -s -j"$(nproc)" foomatic-rip
   cd "$B"
 fi
 echo
